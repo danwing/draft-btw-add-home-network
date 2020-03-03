@@ -145,13 +145,16 @@
 
 (b) Cellular Networks
 
-           ,--,--,--.             ,--,--,--.
-        ,-'          `-.       ,-'   ISP    `-.           +--+
-       (      LAN      CPE----(    DNS Server  )----------|UE|
-        `-.          ,-'       `-.          ,-'           +--+
-           `--'--'--'             `--'--'--'                |
-                |                     |<=======Do53========>| 
-                |<=======Do53========>| 
+                |<=======Do53=============>| 
+           ,--,--,--.                      |
+        ,-'          `-.               ,--,--,--.    
+       (      LAN      CPE------------+          \
+        `-.          ,-'            ,'   ISP     `-. 
+           `--'--'--'              (    DNS Server  )
+                              +-----+-.          ,-'
+               +--+           |        `--'--'--'  
+               |UE+-----------+
+               +--+
 ]]></artwork>
         </figure></t>
 
@@ -173,7 +176,7 @@
         </list>Relying upon local DNS resolvers will therefore contribute to
       meet the aforementioned service requirements. The use of external
       resolvers is likely to induce an extra service delay which exceeds by
-      far the service target (1 or 4 ms).</t>
+      far the service target.</t>
 
       <t>This document focuses on the support of DNS-over-HTTPS (DoH) <xref
       target="RFC8484"></xref> or DNS-over-TLS (DoT) <xref
@@ -181,21 +184,11 @@
       describes how a local DoH/DoT server can be discovered and used by
       connected hosts.</t>
 
-      <t>It is not the intent of this document to argue in favor or against
-      the generalization of DoH/DoT. Likewise, it is not the intent of this
-      document to evaluate the benefits and impacts of enabling DoH/DoT within
-      some networks. Furthermore, it is not the intent of this document to
-      discuss which information can be supplied to third-party resolvers
-      (e.g., EDNS Client Subnet, <xref target="RFC7871"> </xref>) for the sake
-      of properly delivering some services nor how alternative options to DNS
-      can be used to deliver the service that are currently "bound" with the
-      DNS service.</t>
-
       <t>Some ISPs rely upon external resolvers (e.g., outsourced service or
       public resolvers); these ISPs provide their customers with the IP
-      addresses of these resolvers (these addresses are typically configured
-      on CPEs) using the mechanisms listed above. This document does not
-      preclude such deployments. It is up to an ISP to decide which list of
+      addresses of these resolvers.  These addresses are typically configured
+      on CPEs using the same mechanisms listed above. This document permits
+      such deployments. It is up to an ISP to decide which list of
       DNS resolvers to advertise to its serviced devices.</t>
     </section>
 
@@ -215,17 +208,17 @@
 
     <section anchor="depl" title="Sample Deployment Scenarios">
       <t>ISPs have developed an expertise in managing service-specific
-      configuration information, using, e.g., TR-069. For example, these tools
+      configuration information (e.g., TR-069). For example, these tools
       may be used to provision authentication domain name information (ADN,
-      defined in <xref target="RFC8310"></xref>) to managed CPEs if DoH or DoT
+      defined in <xref target="RFC8310"></xref>) to managed CPEs if DoH/DoT
       is supported by a local network similar to what is depicted in <xref
       target="wan"></xref>.</t>
 
-      <t>DNS clients may try to establish DoH and/or DoT sessions with
+      <t>DNS clients may try to establish DoH/DoT sessions with
       discovered DNS servers to determine whether these servers support DoH
       and/or DoT (<xref target="address"></xref>). Alternatively, a DNS client
-      may discover whether the DNS server in the local network supports DoH or
-      DoT by using the mechanism discussed in Section 6 of <xref
+      may discover whether the DNS server in the local network supports DoH/DoT
+      by using the mechanism discussed in Section 6 of <xref
       target="I-D.reddy-dprive-dprive-privacy-policy"></xref>. If DoH is
       supported by the DNS server, the DNS client may request the URI resource
       record type <xref target="RFC7553"></xref> to use the HTTPS URI scheme
@@ -242,15 +235,16 @@
                 |<=======DoH/DoT=====>| 
 
 
-(b) Cellular Networks                                                            
-                         ,--,--,--.
-                      ,-'   ISP    `-.
-              CPE----(    DNS Server  )------ User Equipment
-               |      `-.          ,-'                |
-               |         `--'--'--'                   |
-               |             |<=========DoH/DoT======>| 
-               |<==DoT/DoH==>| 
-
+(b) Cellular Networks                                                                          |<=======Do53=============>| 
+           ,--,--,--.                      |
+        ,-'          `-.               ,--,--,--.    
+       (      LAN      CPE------------+          \
+        `-.          ,-'            ,'   ISP     `-. 
+           `--'--'--'              (    DNS Server  )
+                              +-----+-.          ,-'
+               +--+           |        `--'--'--'  
+               |UE+-----------+
+               +--+
 ]]></artwork>
         </figure></t>
 
@@ -267,19 +261,18 @@
                       ,--,--,--.             ,--,--,--.
                    ,-'          `-.       ,-'   ISP    `-.
             Host--(      LAN      CPE----(    DNS Server  )
-             |     `-.          ,-'|      `-.          ,-'
-             |        `--'--'--'   |         `--'--'--'
+             |     `-.          ,-'       `-.          ,-'
+             |        `--'--'--'             `--'--'--'
              |                                   | 
              |<==============DoT/DoH============>|
-
 ]]></artwork>
         </figure></t>
 
-      <t>In many deployments, the CPE embeds a DNS forwarder. The CPE
+      <t>In many deployments, the CPE embeds a caching DNS forwarder. The CPE
       advertises itself as the default DNS server to the hosts it serves. The
       CPE relies upon DHCP or RA to advertise itself to internal hosts as the
-      default DoT/DoH/Do53 server. The CPE forwards DNS requests received from
-      internal hosts that it cannot handle locally to an upstream DoH/DoT/Do53
+      default DoT/DoH/Do53 server. When receiving a DNS request it cannot
+      handle locally, the CPE forwards the request to an upstream DoH/DoT/Do53
       resolver. Such deployment is required for IPv4 service continuity
       purposes (e.g., <xref target="I-D.ietf-v6ops-rfc7084-bis"></xref>) or
       for supporting advanced services within the home (e.g., malware
@@ -287,9 +280,9 @@
       target="RFC8520"></xref> to only allow intended communications to and
       from an IoT device). When the CPE behaves as a DNS forwarder, DNS
       communications can be decomposed into two legs:<list style="symbols">
-          <t>The one between an internal host and the CPE.</t>
+          <t>The leg between an internal host and the CPE.</t>
 
-          <t>The second one between the CPE and an upstream DNS resolver.</t>
+          <t>The leg between the CPE and an upstream DNS resolver.</t>
         </list></t>
 
       <t>An ISP that wants to offer DoH/DoT to its customers may enable
@@ -336,16 +329,17 @@
           for the public IP address of the DoH/DoT forwarder. This mechanism
           requires the issuance of the certificate and the management of the
           certificate's renewal to be supported by the CPE itself. The HTTP
-          Challenge (http-01) or TLS with Application Level Protocol
-          Negotiation (TLS ALPN) challenge (tls-alpn-01) are used to prove the
+          Challenge (HTTP-01) or TLS with Application Level Protocol
+          Negotiation (TLS ALPN) challenge (TLS-ALPN-01) are used to prove the
           IP address ownership during the issuance of the certificate. This
           certificate will carry a public IP address in iPAddress
           subjectAltName extension.<vspace blankLines="1" />The disadvantages
           of this mechanism are: (1) the certificate needs to be re-issued
-          every time the IPv6 prefix or the public IPv4 address changes and
-          (2) the CPE needs to run an HTTP(S) server until the ACME server
-          validates that the challenge has completed so that the ACME server
-          can issue the requested certificate.</t>
+          every time the subscriber's IPv6 prefix or the public IPv4 
+          address changes and (2) the CPE needs to run an HTTP- or 
+          HTTPS server (on the default ports) while the ACME server is 
+          validating the challenge; the CPE might have those ports 
+          forwarded to an internal host for other purposes.</t>
         </list></t>
     </section>
 
